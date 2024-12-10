@@ -1,0 +1,33 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%files
+    environment.yml
+
+%post
+    apt-get update && apt-get -y upgrade
+    apt-get -y install \
+    build-essential \
+    wget \
+    bzip2 \
+    ca-certificates \
+    git
+
+    # Install miniconda
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda
+    rm Miniconda3-latest-Linux-x86_64.sh
+    export PATH="/opt/conda/bin:$PATH"
+
+
+    # Install environment from yml
+    ENV_NAME=$(head -1 environment.yml | cut -d' ' -f2)
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> $APPTAINER_ENVIRONMENT
+    echo "conda activate $ENV_NAME" >> $APPTAINER_ENVIRONMENT
+
+    . /opt/conda/etc/profile.d/conda.sh
+    conda env create -f environment.yml -p /opt/conda/envs/$ENV_NAME
+    conda clean --all
+
+%runscript
+    exec "$@"
